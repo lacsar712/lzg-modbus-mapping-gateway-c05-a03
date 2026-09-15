@@ -23,8 +23,8 @@ docker compose up --build
 
 | 用户 | 密码 | 权限 |
 |------|------|------|
-| engineer | mod123456 | 可读 / 写点 / reload |
-| observer | obs123456 | 只读 |
+| engineer | mod123456 | 可读 / 写点 / reload / 维护报警规则 / 消除报警 |
+| observer | obs123456 | 只读（含报警与规则查看） |
 
 ## 架构
 
@@ -42,7 +42,15 @@ docker compose up --build
 - `GET  /api/devices/{id}/points`
 - `GET  /api/devices/{id}/points/{name}`
 - `PUT  /api/devices/{id}/points/{name}` body `{ "value": <number> }`
-- `GET  /api/devices/{id}/snapshot`
+- `GET  /api/devices/{id}/snapshot`（响应点位含 `alarm` 字段：`"high"`/`"low"`/缺省正常）
+- `GET  /api/alarms?status=active|resolved&deviceId=&point=&limit=` 报警事件（活跃/历史）
+- `GET  /api/alarms/summary` 活跃数与按设备汇总（角标用）
+- `GET  /api/alarm-rules?deviceId=` 报警规则列表
+- `PUT  /api/devices/{id}/alarm-rules/{point}` body `{ "high": n, "low": n, "enabled": true }`（engineer；high/low 至少一个）
+- `DELETE /api/devices/{id}/alarm-rules/{point}`（engineer；活跃报警随之自动消除）
+- `POST /api/alarms/{eventId}/clear`（engineer 手动消除）
+
+> 报警阈值（读值越界，snapshot 后评估产生事件）与映射中的 `min`/`max`（写值合法范围校验，`CheckMinMax`）相互独立。规则/事件持久化在 `ALARM_FILE`（compose 中为 `/data/alarms.json`）。
 
 ## YAML DSL
 

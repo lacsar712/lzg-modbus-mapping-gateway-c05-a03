@@ -7,6 +7,9 @@
       </div>
       <nav class="nav">
         <router-link to="/devices">设备列表</router-link>
+        <router-link to="/alarms">
+          <el-badge :value="alarmStore.activeCount" :hidden="!alarmStore.activeCount" :max="99" type="danger">报警中心</el-badge>
+        </router-link>
         <router-link to="/mapping">映射配置</router-link>
         <router-link to="/diagnostics">连接诊断</router-link>
       </nav>
@@ -22,13 +25,19 @@
 </template>
 
 <script setup>
+import { onMounted, onUnmounted } from 'vue'
 import { useAuthStore } from '../stores/auth'
+import { useAlarmStore } from '../stores/alarm'
 import { useRouter } from 'vue-router'
 
 const auth = useAuthStore()
+const alarmStore = useAlarmStore()
 const router = useRouter()
 function onLogout() {
   auth.logout()
   router.push({ name: 'login' })
 }
+
+onMounted(() => alarmStore.startPolling(5000))
+onUnmounted(() => alarmStore.stopPolling())
 </script>

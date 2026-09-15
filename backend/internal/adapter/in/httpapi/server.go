@@ -40,6 +40,13 @@ func (s *Server) Router() *gin.Engine {
 		auth.GET("/devices/:id/points/:name", s.getPoint)
 		auth.PUT("/devices/:id/points/:name", s.writePoint)
 		auth.GET("/devices/:id/snapshot", s.snapshot)
+		// 报警：observer 可读列表/规则/汇总，engineer 可维护规则与消除事件
+		auth.GET("/alarms", s.listAlarms)
+		auth.GET("/alarms/summary", s.alarmSummary)
+		auth.POST("/alarms/:id/clear", s.clearAlarm)
+		auth.GET("/alarm-rules", s.listAlarmRules)
+		auth.PUT("/devices/:id/alarm-rules/:point", s.upsertAlarmRule)
+		auth.DELETE("/devices/:id/alarm-rules/:point", s.deleteAlarmRule)
 		auth.GET("/mapping", s.getMapping)
 		auth.POST("/reload", s.reload)
 	}

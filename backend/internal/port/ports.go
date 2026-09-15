@@ -15,3 +15,10 @@ type MappingStore interface {
 	Save(yamlText string) error
 	Path() string
 }
+
+// AlarmStore persists alarm rules and events.
+type AlarmStore interface {
+	Load() (domain.AlarmState, error)
+	Save(state domain.AlarmState) error
+	Path() string
+}

@@ -6,6 +6,7 @@ import DevicesView from '../views/DevicesView.vue'
 import MonitorView from '../views/MonitorView.vue'
 import MappingView from '../views/MappingView.vue'
 import DiagnosticsView from '../views/DiagnosticsView.vue'
+import AlarmsView from '../views/AlarmsView.vue'
 
 const router = createRouter({
   history: createWebHistory(),
@@ -19,6 +20,7 @@ const router = createRouter({
         { path: '', redirect: '/devices' },
         { path: 'devices', name: 'devices', component: DevicesView },
         { path: 'devices/:id/monitor', name: 'monitor', component: MonitorView },
+        { path: 'alarms', name: 'alarms', component: AlarmsView },
         { path: 'mapping', name: 'mapping', component: MappingView },
         { path: 'diagnostics', name: 'diagnostics', component: DiagnosticsView }
       ]

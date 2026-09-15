@@ -12,6 +12,7 @@ import (
 type GatewayService struct {
 	store  port.MappingStore
 	modbus port.ModbusClient
+	alarms *AlarmService
 
 	mu              sync.RWMutex
 	cfg             domain.MappingConfig
@@ -20,13 +21,23 @@ type GatewayService struct {
 	lastErrorAt     time.Time
 }
 
-func NewGatewayService(store port.MappingStore, modbus port.ModbusClient) (*GatewayService, error) {
-	s := &GatewayService{store: store, modbus: modbus}
+func NewGatewayService(store port.MappingStore, modbus port.ModbusClient, alarms *AlarmService) (*GatewayService, error) {
+	s := &GatewayService{store: store, modbus: modbus, alarms: alarms}
+	if alarms != nil {
+		alarms.SetPointLookup(s.pointExists)
+	}
 	if err := s.Reload(); err != nil {
 		return nil, err
 	}
 	return s, nil
 }
+
+func (s *GatewayService) pointExists(deviceID, point string) bool {
+	_, _, err := s.Config().FindPoint(deviceID, point)
+	return err == nil
+}
+
+func (s *GatewayService) Alarms() *AlarmService { return s.alarms }
 
 func (s *GatewayService) Reload() error {
 	cfg, text, err := s.store.Load()
@@ -188,6 +199,18 @@ func (s *GatewayService) Snapshot(deviceID string) (*domain.Snapshot, error) {
 		eng := domain.ApplyScale(decoded, p.Scale, p.Offset)
 		pv.Value = domain.FormatValue(p, eng)
 		snap.Points = append(snap.Points, pv)
+	}
+
+	// Read-side threshold evaluation: produces/resolves alarm events but
+	// never alters the snapshot values (distinct from write-time min/max).
+	if s.alarms != nil {
+		s.alarms.Evaluate(snap)
+		active := s.alarms.ActiveByPoint(deviceID)
+		for i := range snap.Points {
+			if level, ok := active[deviceID+"/"+snap.Points[i].Name]; ok {
+				snap.Points[i].Alarm = level
+			}
+		}
 	}
 	return snap, nil
 }

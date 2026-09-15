@@ -27,6 +27,7 @@ services:
       HTTP_ADDR: ":8080"
       MAPPING_FILE: /data/mapping.yaml
       MAPPING_DEFAULT: /app/configs/mapping.yaml
+      ALARM_FILE: /data/alarms.json
       MODBUS_HOST_OVERRIDE: mock-plc
       MODBUS_PORT_OVERRIDE: "5020"
       JWT_SECRET: modbus-mapping-gateway-demo-secret-32b

@@ -179,6 +179,8 @@ type PointValue struct {
 	Raw      []uint16    `json:"raw,omitempty"`
 	Quality  string      `json:"quality"`
 	Error    string      `json:"error,omitempty"`
+	// Alarm is the active threshold level ("high"/"low") for this read value, "" when normal.
+	Alarm string `json:"alarm,omitempty"`
 }
 
 type Snapshot struct {

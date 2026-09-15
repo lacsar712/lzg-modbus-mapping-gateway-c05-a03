@@ -8,7 +8,13 @@
       <el-button :loading="loading" @click="load">刷新</el-button>
     </div>
     <el-table :data="devices" v-loading="loading" empty-text="暂无设备">
-      <el-table-column prop="id" label="设备 ID" min-width="140" />
+      <el-table-column prop="id" label="设备 ID" min-width="140">
+        <template #default="{ row }">
+          <el-badge :value="alarmStore.perDevice[row.id] || 0" :hidden="!alarmStore.perDevice[row.id]" type="danger">
+            <span style="margin-right:14px">{{ row.id }}</span>
+          </el-badge>
+        </template>
+      </el-table-column>
       <el-table-column prop="name" label="名称" min-width="160" />
       <el-table-column prop="endpoint" label="Endpoint" min-width="160" />
       <el-table-column prop="unitId" label="Unit" width="80" />
@@ -29,7 +35,9 @@
 import { onMounted, ref } from 'vue'
 import { ElMessage } from 'element-plus'
 import api from '../api/client'
+import { useAlarmStore } from '../stores/alarm'
 
+const alarmStore = useAlarmStore()
 const devices = ref([])
 const loading = ref(false)
 

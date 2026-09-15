@@ -2,8 +2,11 @@
   <div class="card-panel">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;gap:12px;flex-wrap:wrap">
       <div>
-        <h2 style="margin:0 0 4px;font-size:18px">点位监控 · {{ deviceId }}</h2>
-        <div class="sub" style="margin:0">Snapshot 定时刷新；可写点位可提交写值</div>
+        <h2 style="margin:0 0 4px;font-size:18px">
+          点位监控 · {{ deviceId }}
+          <el-badge v-if="deviceActive" :value="deviceActive" type="danger" style="margin-left:10px" />
+        </h2>
+        <div class="sub" style="margin:0">Snapshot 定时刷新；可写点位可提交写值；读值越限自动生成报警</div>
       </div>
       <div style="display:flex;gap:8px;align-items:center">
         <el-switch v-model="autoRefresh" active-text="自动刷新" />
@@ -12,7 +15,7 @@
       </div>
     </div>
 
-    <el-table :data="points" v-loading="loading" empty-text="无点位">
+    <el-table :data="points" v-loading="loading" empty-text="无点位" :row-class-name="rowClass">
       <el-table-column prop="name" label="点位" min-width="120" />
       <el-table-column prop="address" label="地址" width="80" />
       <el-table-column prop="type" label="类型" min-width="120" />
@@ -23,7 +26,15 @@
       </el-table-column>
       <el-table-column label="值" min-width="120">
         <template #default="{ row }">
-          <span class="mono">{{ formatVal(row.value) }}</span>
+          <span class="mono" :class="{ 'alarm-val': !!row.alarm }">{{ formatVal(row.value) }}</span>
+        </template>
+      </el-table-column>
+      <el-table-column label="报警" width="80">
+        <template #default="{ row }">
+          <el-tag v-if="row.alarm" :type="row.alarm === 'high' ? 'danger' : 'warning'" size="small">
+            {{ row.alarm === 'high' ? '高报' : '低报' }}
+          </el-tag>
+          <span v-else class="sub">—</span>
         </template>
       </el-table-column>
       <el-table-column label="Raw" min-width="120">
@@ -70,10 +81,13 @@ import { useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import api from '../api/client'
 import { useAuthStore } from '../stores/auth'
+import { useAlarmStore } from '../stores/alarm'
 
 const route = useRoute()
 const auth = useAuthStore()
+const alarmStore = useAlarmStore()
 const deviceId = computed(() => route.params.id)
+const deviceActive = computed(() => alarmStore.perDevice[deviceId.value] || 0)
 const points = ref([])
 const loading = ref(false)
 const autoRefresh = ref(true)
@@ -94,11 +108,16 @@ async function load() {
   try {
     const { data } = await api.get(`/devices/${deviceId.value}/snapshot`)
     points.value = data.points || []
+    alarmStore.refreshSummary()
   } catch (e) {
     ElMessage.error(e.response?.data?.error || 'snapshot 失败')
   } finally {
     loading.value = false
   }
+}
+
+function rowClass({ row }) {
+  return row.alarm ? 'row-alarm' : ''
 }
 
 function openWrite(row) {
@@ -138,3 +157,16 @@ onUnmounted(() => {
   if (timer) clearInterval(timer)
 })
 </script>
+
+<style scoped>
+.alarm-val {
+  color: var(--el-color-danger);
+  font-weight: 700;
+}
+:deep(.el-table tr.row-alarm) {
+  background-color: rgba(245, 108, 108, 0.10) !important;
+}
+:deep(.el-table tr.row-alarm:hover > td) {
+  background-color: rgba(245, 108, 108, 0.16) !important;
+}
+</style>
